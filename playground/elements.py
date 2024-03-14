@@ -78,8 +78,9 @@ class BaseTile(EmptySpace):
             obj.remove_connections(self, twoway=False)
 
     def add_substances(self, obj: BaseLiving):
-        super().add_substances(obj)
-        obj.tile = self
+        if obj not in self._substances and self.is_support(obj.__class__):
+            self._substances.append(obj)
+            obj.tile = self
 
     def remove_substances(self, obj: BaseLiving):
         super().remove_substances(obj)
