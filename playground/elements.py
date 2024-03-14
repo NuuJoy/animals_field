@@ -25,8 +25,10 @@ class Entity():
 
 
 class EmptySpace(Entity):
-    _connections: list[EmptySpace] = []
-    _substances: list[BaseLiving] = []
+    def __init__(self, idenstr: str | None = None) -> None:
+        super().__init__(idenstr)
+        self._connections: list[EmptySpace] = []
+        self._substances: list[BaseLiving] = []
 
     @property
     def connections(self):
@@ -37,16 +39,20 @@ class EmptySpace(Entity):
         return self._substances
 
     def add_connections(self, obj: EmptySpace):
-        self._connections.append(obj)
+        if obj not in self._connections:
+            self._connections.append(obj)
 
     def remove_connections(self, obj: EmptySpace):
-        self._connections.remove(obj)
+        if obj in self._connections:
+            self._connections.remove(obj)
 
     def add_substances(self, obj: BaseLiving):
-        self._substances.append(obj)
+        if obj not in self._substances:
+            self._substances.append(obj)
 
     def remove_substances(self, obj: BaseLiving):
-        self._substances.remove(obj)
+        if obj in self._substances:
+            self._substances.remove(obj)
 
     def is_support(self, cls: type[BaseLiving]) -> bool:
         return True
@@ -54,18 +60,33 @@ class EmptySpace(Entity):
     def get_properties(self) -> dict[str, Any]:
         propdict = super().get_properties()
         propdict.update({
-            'connections': [conn.identifier for conn in self.connections],
-            'substances': [subs.identifier for subs in self.substances]
+            'connections': [con.identifier for con in self.connections],
+            'substances': [sub.get_properties() for sub in self.substances]
         })
         return propdict
 
 
 class BaseTile(EmptySpace):
+    def add_connections(self, obj: EmptySpace, twoway: bool = True):
+        super().add_connections(obj)
+        if twoway and isinstance(obj, BaseTile):
+            obj.add_connections(self, twoway=False)
+
+    def remove_connections(self, obj: EmptySpace, twoway: bool = True):
+        super().remove_connections(obj)
+        if twoway and isinstance(obj, BaseTile):
+            obj.remove_connections(self, twoway=False)
+
     def add_substances(self, obj: BaseLiving):
         super().add_substances(obj)
         obj.tile = self
 
+    def remove_substances(self, obj: BaseLiving):
+        super().remove_substances(obj)
+        obj.tile = None
+
     def is_support(self, cls: type[BaseLiving]):
+        # not allow duplicate type within substance
         return not any([isinstance(subs, cls) for subs in self.substances])
 
 
@@ -80,10 +101,17 @@ class Water(BaseTile):
 
 
 class BaseLiving(Entity):
-    tile: BaseTile
     energy: int = 0
     health: int = 0
     protect: int = 0
+
+    def __init__(self,
+                 idenstr: str | None = None,
+                 tile: BaseTile | None = None) -> None:
+        super().__init__(idenstr)
+        self.tile = tile
+        if self.tile is not None:
+            self.tile.add_substances(self)
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name in ('energy', 'health', 'protect'):
@@ -93,7 +121,7 @@ class BaseLiving(Entity):
     def get_properties(self) -> dict[str, Any]:
         propdict = super().get_properties()
         propdict.update({
-            'tile': self.tile.identifier,
+            'tile': self.tile.identifier if self.tile is not None else None,
             'energy': self.energy,
             'health': self.health,
             'protect': self.protect
@@ -102,7 +130,10 @@ class BaseLiving(Entity):
 
 
 class GroundPlant(BaseLiving):
-    def __init__(self) -> None:
+    def __init__(self,
+                 idenstr: str | None = None,
+                 tile: BaseTile | None = None) -> None:
+        super().__init__(idenstr, tile)
         self.health = 1
 
     def standby(self):
@@ -110,43 +141,57 @@ class GroundPlant(BaseLiving):
         self.health += 1
 
     def reproduce(self, target_tile: Ground):
+        if self.tile is None:
+            raise ValueError('Self-tile not found')
         if (
             target_tile in self.tile.connections
-        ) and (
-            not target_tile.is_support(self.__class__)
+            and target_tile.is_support(self.__class__)
         ):
+            self.energy = 0
             target_tile.add_substances(self.__class__())
         else:
             raise ValueError('Can\'t reproduce on selected tile')
 
 
 class WaterPlant(BaseLiving):
-    def __init__(self) -> None:
+    def __init__(self,
+                 idenstr: str | None = None,
+                 tile: BaseTile | None = None) -> None:
+        super().__init__(idenstr, tile)
         self.health = 1
 
     def standby(self):
         self.energy += 1
         self.health += 1
 
+    def _get_support_tiles(self) -> list[BaseTile]:
+        if self.tile is not None:
+            return [
+                con
+                for con in self.tile.connections
+                if (
+                    isinstance(con, BaseTile)
+                    and con.is_support(self.__class__)
+                )
+            ]
+        else:
+            raise ValueError('Self-tile not found')
+
     def float(self):
-        support_tiles = [
-            conn
-            for conn in self.tile.connections
-            if conn.is_support(self.__class__)
-        ]
-        if support_tiles:
+        # randomly move to support adjacent tile
+        if self.tile and (support_tiles := self._get_support_tiles()):
             target = choice(support_tiles)
             self.tile.remove_substances(self)
             target.add_substances(self)
+            self.health += 1
         else:
             raise ValueError('No connected support tile')
 
-    def reproduce(self, target_tile: Water):
-        if (
-            target_tile in self.tile.connections
-        ) and (
-            not target_tile.is_support(self.__class__)
-        ):
-            target_tile.add_substances(self.__class__())
+    def reproduce(self):
+        # randomly reproduce to support adjacent tile
+        if self.tile and (support_tiles := self._get_support_tiles()):
+            target = choice(support_tiles)
+            target.add_substances(self.__class__())
+            self.energy = 0
         else:
-            raise ValueError('Can\'t reproduce on selected tile')
+            raise ValueError('No connected support tile')
