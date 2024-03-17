@@ -76,24 +76,46 @@ class Field2D():
     def tiles(self):
         return self._handler
 
-    def get_tile(self, posx: int, posy: int):
-        return self.tiles[(posx, posy)]
+    def get_tile(self, *args: str | int):
+        if len(args) == 1:
+            for tile in self.tiles.values():
+                if tile.identifier == args[0]:
+                    return tile
+            else:
+                raise ValueError(f'Not found tile with identifier: {args[0]}')
+        elif len(args) == 2:
+            if args in self.tiles:
+                return self.tiles[args]
+            else:
+                raise ValueError(f'Not found tile with key position: {args}')
+        else:
+            raise ValueError(
+                'Expect type "identifier: str" or "position: int, int"')
 
-    def get_substances(self) -> list[BaseLiving]:
+    @property
+    def substances(self) -> list[BaseLiving]:
         return [
             sub
             for tile in self._handler.values()
             for sub in tile.substances
         ]
 
+    def get_substance(self, identifier: str):
+        for sub in self.substances:
+            if sub.identifier == identifier:
+                return sub
+
     def get_map_properties(self):
         return {
-            f'{d1},{d2}': tile.get_properties()
-            for (d1, d2), tile in self._handler.items()
+            key: tile.get_properties()
+            for key, tile in self._handler.items()
         }
 
     def serialize(self) -> str:
-        return json.dumps(self.get_map_properties(), indent=4)
+        return json.dumps({
+            f'{d1},{d2}': tileprop
+            for (d1, d2), tileprop in self.get_map_properties().items()
+        }, indent=4)
 
     def visualize(self):
         # get boundary
