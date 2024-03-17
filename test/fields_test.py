@@ -49,6 +49,20 @@ class ElementsTests(unittest.TestCase):
         self.assertIsInstance(field.serialize(), str)
         self.assertEqual(field.visualize(), '  ·\n·· \n · ')
 
+    def test_01_FieldClone(self):
+        prototype = Field2D()
+        prototype.add_tile(-1, 0, tile1 := BaseTile())
+        prototype.add_tile(0, 0, tile2 := BaseTile())
+        prototype.add_tile(0, -1, BaseTile())
+        prototype.add_tile(1, 1, BaseTile())
+        tile1.add_substances(BaseLiving())
+        tile2.add_substances(BaseLiving())
+        blueprint = prototype.serialize()
+        clone = Field2D(blueprint=blueprint)
+        self.assertEqual(prototype, clone)
+        prototype.remove_tile(0, 0)
+        self.assertNotEqual(prototype, clone)
+
 
 if __name__ == '__main__':
     print(f'''\n{'[Start Tests]----------':->90}''')

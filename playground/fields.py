@@ -4,12 +4,37 @@ from __future__ import annotations
 
 import json
 
+from playground import elements
 from playground.elements import BaseTile, BaseLiving
 
 
 class Field2D():
-    def __init__(self) -> None:
+    def __init__(self, blueprint: str | None = None) -> None:
         self.handler: dict[tuple[int, int], BaseTile] = {}
+        if blueprint is not None:
+            # creat all tile and substance from blueprint data
+            mapprop = json.loads(blueprint)
+            for key, tileprop in mapprop.items():
+                posx, posy = (int(val) for val in key.split(','))
+                basetile_cls = getattr(elements, tileprop['classname'])
+                tile = basetile_cls(idenstr=tileprop['identifier'])
+
+                for liveprop in tileprop['substances']:
+                    baselive_cls = getattr(elements, liveprop['classname'])
+                    live = baselive_cls(
+                        idenstr=liveprop['identifier'],
+                        tile=tile
+                    )
+                    for attrname, attrval in liveprop.items():
+                        if attrname not in (
+                            'classname',
+                            'identifier',
+                            'substances',
+                            'connections',
+                            'tile'
+                        ):
+                            setattr(live, attrname, attrval)
+                self.add_tile(posx, posy, tile)
 
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, Field2D):
