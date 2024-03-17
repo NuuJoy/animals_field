@@ -12,7 +12,7 @@ class ElementsTests(unittest.TestCase):
 
     def test_00_Field2D(self):
         field = Field2D()
-        self.assertEqual(field.handler, {})
+        self.assertEqual(field.tiles, {})
         field.add_tile(0, 1, BaseTile())
         field.add_tile(-1, 0, tile1 := BaseTile())
         self.assertRaises(KeyError, lambda: field.add_tile(-1, 0, BaseTile()))
@@ -35,19 +35,23 @@ class ElementsTests(unittest.TestCase):
         self.assertNotIn(tile4, tile2.connections)
         self.assertNotIn(tile4, tile3.connections)
         # test substance adding
-        tile1.add_substances(BaseLiving())
+        tile1.add_substances(live1 := BaseLiving())
         tile4.add_substances(BaseLiving())
-        self.assertEqual(len(field.get_substances()), 2)
-        self.assertIn(tile1.substances[0], field.get_substances())
-        self.assertIn(tile4.substances[0], field.get_substances())
+        self.assertEqual(len(field.substances), 2)
+        self.assertIn(tile1.substances[0], field.substances)
+        self.assertIn(tile4.substances[0], field.substances)
         # test output
         self.assertEqual(len(field.get_map_properties()), 4)
-        self.assertIn('-1,0', field.get_map_properties())
-        self.assertIn('0,0', field.get_map_properties())
-        self.assertIn('0,-1', field.get_map_properties())
-        self.assertIn('1,1', field.get_map_properties())
+        self.assertIn((-1, 0), field.get_map_properties())
+        self.assertIn((0, 0), field.get_map_properties())
+        self.assertIn((0, -1), field.get_map_properties())
+        self.assertIn((1, 1), field.get_map_properties())
         self.assertIsInstance(field.serialize(), str)
-        self.assertEqual(field.visualize(), '  ·\n·· \n · ')
+        self.assertEqual(field.visualize(), '  x\nx· \n · ')
+        # test tile/substance getter
+        self.assertEqual(field.get_tile(0, -1).identifier, tile3.identifier)
+        self.assertIs(field.get_tile(tile2.identifier), tile2)
+        self.assertIs(field.get_substance(live1.identifier), live1)
 
     def test_01_FieldClone(self):
         prototype = Field2D()
