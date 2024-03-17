@@ -48,9 +48,6 @@ class EmptySpace(Entity):
     def remove_connections(self, obj: EmptySpace):
         if obj in self._connections:
             self._connections.remove(obj)
-            self._connections = sorted(
-                self._connections, key=lambda con: con.identifier
-            )
 
     def add_substances(self, obj: BaseLiving):
         if obj not in self._substances:
@@ -62,9 +59,6 @@ class EmptySpace(Entity):
     def remove_substances(self, obj: BaseLiving):
         if obj in self._substances:
             self._substances.remove(obj)
-            self._substances = sorted(
-                self._substances, key=lambda sub: sub.identifier
-            )
 
     def is_support(self, cls: type[BaseLiving]) -> bool:
         return True
