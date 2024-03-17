@@ -10,7 +10,7 @@ from playground.elements import BaseTile, BaseLiving
 
 class Field2D():
     def __init__(self, blueprint: str | None = None) -> None:
-        self.handler: dict[tuple[int, int], BaseTile] = {}
+        self._handler: dict[tuple[int, int], BaseTile] = {}
         if blueprint is not None:
             # creat all tile and substance from blueprint data
             mapprop = json.loads(blueprint)
@@ -44,45 +44,52 @@ class Field2D():
 
     def _get_adjacent_tiles(self, d1: int, d2: int):
         return [
-            self.handler[key]
+            self._handler[key]
             for key in [
                 (d1 - 1, d2),
                 (d1 + 1, d2),
                 (d1, d2 - 1),
                 (d1, d2 + 1)
             ]
-            if key in self.handler
+            if key in self._handler
         ]
 
     def add_tile(self, posx: int, posy: int, tile: BaseTile):
         key = (posx, posy)
-        if key in self.handler:
+        if key in self._handler:
             raise KeyError('Adding duplicate key (position has been used)')
         else:
-            self.handler[key] = tile
+            self._handler[key] = tile
             for adjacent_tile in self._get_adjacent_tiles(posx, posy):
                 tile.add_connections(adjacent_tile)
 
     def remove_tile(self, posx: int, posy: int):
         key = (posx, posy)
-        if key not in self.handler:
+        if key not in self._handler:
             raise KeyError('Missing handler key (tile position not found)')
-        tile = self.handler[key]
+        tile = self._handler[key]
         for con in tile.connections:
             tile.remove_connections(con)
-        del self.handler[key]
+        del self._handler[key]
+
+    @property
+    def tiles(self):
+        return self._handler
+
+    def get_tile(self, posx: int, posy: int):
+        return self.tiles[(posx, posy)]
 
     def get_substances(self) -> list[BaseLiving]:
         return [
             sub
-            for tile in self.handler.values()
+            for tile in self._handler.values()
             for sub in tile.substances
         ]
 
     def get_map_properties(self):
         return {
             f'{d1},{d2}': tile.get_properties()
-            for (d1, d2), tile in self.handler.items()
+            for (d1, d2), tile in self._handler.items()
         }
 
     def serialize(self) -> str:
@@ -90,7 +97,10 @@ class Field2D():
 
     def visualize(self):
         # get boundary
-        x_values, y_values = [values for values in zip(*self.handler)]
+        if not self._handler:
+            return
+
+        x_values, y_values = [values for values in zip(*self._handler)]
         x_shift = min(x_values)
         y_shift = min(y_values)
         x_max = max(x_values) - x_shift
@@ -100,7 +110,10 @@ class Field2D():
             [' ' for _ in range(x_max + 1)]
             for _ in range(y_max + 1)
         ]
-        # mark tile with middle-dot
-        for d1, d2 in self.handler:
-            listmap[d2 - y_shift][d1 - x_shift] = u'\xb7'
+        # mark tile with middle-dot, substance with cross
+        for (d1, d2), tile in self._handler.items():
+            if not tile.substances:
+                listmap[d2 - y_shift][d1 - x_shift] = u'\xb7'
+            else:
+                listmap[d2 - y_shift][d1 - x_shift] = 'x'
         return '\n'.join([''.join(row) for row in listmap][::-1])
