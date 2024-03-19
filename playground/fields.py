@@ -44,33 +44,33 @@ class Field2D():
 
     def _get_adjacent_tiles(self, d1: int, d2: int):
         return [
-            self._handler[key]
+            self.tiles[key]
             for key in [
                 (d1 - 1, d2),
                 (d1 + 1, d2),
                 (d1, d2 - 1),
                 (d1, d2 + 1)
             ]
-            if key in self._handler
+            if key in self.tiles
         ]
 
     def add_tile(self, posx: int, posy: int, tile: BaseTile):
         key = (posx, posy)
-        if key in self._handler:
+        if key in self.tiles:
             raise KeyError('Adding duplicate key (position has been used)')
         else:
-            self._handler[key] = tile
+            self.tiles[key] = tile
             for adjacent_tile in self._get_adjacent_tiles(posx, posy):
                 tile.add_connections(adjacent_tile)
 
     def remove_tile(self, posx: int, posy: int):
         key = (posx, posy)
-        if key not in self._handler:
+        if key not in self.tiles:
             raise KeyError('Missing handler key (tile position not found)')
-        tile = self._handler[key]
+        tile = self.tiles[key]
         for con in tile.connections:
             tile.remove_connections(con)
-        del self._handler[key]
+        del self.tiles[key]
 
     @property
     def tiles(self):
@@ -96,7 +96,7 @@ class Field2D():
     def substances(self) -> list[BaseLiving]:
         return [
             sub
-            for tile in self._handler.values()
+            for tile in self.tiles.values()
             for sub in tile.substances
         ]
 
@@ -108,7 +108,7 @@ class Field2D():
     def get_map_properties(self):
         return {
             key: tile.get_properties()
-            for key, tile in self._handler.items()
+            for key, tile in self.tiles.items()
         }
 
     def serialize(self) -> str:
@@ -119,10 +119,10 @@ class Field2D():
 
     def visualize(self):
         # get boundary
-        if not self._handler:
+        if not self.tiles:
             return
 
-        x_values, y_values = [values for values in zip(*self._handler)]
+        x_values, y_values = [values for values in zip(*self.tiles)]
         x_shift = min(x_values)
         y_shift = min(y_values)
         x_max = max(x_values) - x_shift
@@ -133,7 +133,7 @@ class Field2D():
             for _ in range(y_max + 1)
         ]
         # mark tile with middle-dot, substance with cross
-        for (d1, d2), tile in self._handler.items():
+        for (d1, d2), tile in self.tiles.items():
             if not tile.substances:
                 listmap[d2 - y_shift][d1 - x_shift] = u'\xb7'
             else:
