@@ -28,32 +28,32 @@ class TileInterface(Entity):
     @property
     @abstractmethod
     def connections(self) -> list[TileInterface]:
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def substances(self) -> list[LivingInterface]:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def add_connections(self, other: TileInterface) -> None:
-        pass
+    def add_connection(self, other: TileInterface) -> None:
+        raise NotImplementedError
 
     @abstractmethod
-    def remove_connections(self, other: TileInterface) -> None:
-        pass
+    def remove_connection(self, other: TileInterface) -> None:
+        raise NotImplementedError
 
     @abstractmethod
     def add_substances(self, living: LivingInterface) -> None:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def remove_substances(self, living: LivingInterface) -> None:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def is_support(self, living: LivingInterface) -> bool:
-        pass
+        raise NotImplementedError
 
     def get_properties(self):
         propdict = super().get_properties()
@@ -67,35 +67,58 @@ class TileInterface(Entity):
 class LivingInterface(Entity):
     @property
     @abstractmethod
-    def energy(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
     def health(self) -> int:
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
-    def protect(self) -> int:
-        pass
+    def energy(self) -> int:
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def tile(self) -> TileInterface | None:
-        pass
+        raise NotImplementedError
 
     @tile.setter
     @abstractmethod
-    def tile(self, tile: TileInterface | None) -> TileInterface | None:
-        pass
+    def tile(self, newtile: TileInterface | None) -> TileInterface | None:
+        raise NotImplementedError
 
     def get_properties(self) -> dict[str, Any]:
         propdict = super().get_properties()
         propdict.update({
             'tile': self.tile.identifier if self.tile is not None else None,
             'energy': self.energy,
-            'health': self.health,
-            'protect': self.protect
+            'health': self.health
         })
         return propdict
+
+
+class FieldInterface(Entity):
+    @abstractmethod
+    def serialize(self) -> str:
+        raise NotImplementedError
+
+    def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, FieldInterface):
+            return self.serialize() == __value.serialize()
+        else:
+            return False
+
+    @property
+    @abstractmethod
+    def tiles(self) -> tuple[TileInterface, ...]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_tile(self,
+                 tile: TileInterface,
+                 position: tuple[int | float, ...]) -> None:
+        raise NotImplementedError
+
+    def connect_tile(self,
+                     tile: TileInterface,
+                     others: tuple[TileInterface, ...]) -> None:
+        for other in others:
+            tile.add_connection(other)

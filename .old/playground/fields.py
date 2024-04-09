@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 
-from playground import elements
-from playground.elements import BaseTile, BaseLiving
+from old_playground import elements
+from old_playground.elements import BaseTile, BaseLiving
 
 
 class Field2D():

@@ -3,9 +3,9 @@
 from __future__ import annotations
 from random import choice, sample, randint
 
-from playground.fields import Field2D
-from playground.elements import Ground, Water
-from playground.elements import BaseLiving, GroundPlant, WaterPlant
+from old_playground.fields import Field2D
+from old_playground.elements import Ground, Water
+from old_playground.elements import BaseLiving, GroundPlant, WaterPlant
 
 
 class IsleGround(Ground):
