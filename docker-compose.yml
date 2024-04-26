@@ -1,0 +1,39 @@
+version: '3.4'
+
+name: randomfield
+services:
+
+  redis:
+    image: redis:7.2.4
+    restart: always
+    volumes:
+      - ${PWD}/redis_data:/data
+
+  field:
+    image: field
+    build:
+      context: ./services/field
+      dockerfile: ./Dockerfile
+    volumes:
+      - ${PWD}/services/field/field.py:/app/field.py
+      - ${PWD}/playground:/app/playground
+
+  baseliving:
+    image: baseliving
+    build:
+      context: ./services/baseliving
+      dockerfile: ./Dockerfile
+    volumes:
+      - ${PWD}/services/baseliving/baseliving.py:/app/baseliving.py
+      - ${PWD}/playground:/app/playground
+
+  player:
+    image: player
+    build:
+      context: ./services/player
+      dockerfile: ./Dockerfile
+    volumes:
+      - ${PWD}/services/player/player.py:/app/player.py
+      - ${PWD}/playground:/app/playground
+    ports:
+      - 8000:8000
