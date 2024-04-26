@@ -67,12 +67,32 @@ class TileInterface(Entity):
 class LivingInterface(Entity):
     @property
     @abstractmethod
+    def age(self) -> int:
+        raise NotImplementedError
+
+    @age.setter
+    @abstractmethod
+    def age(self, value: int) -> None:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
     def health(self) -> int:
+        raise NotImplementedError
+
+    @health.setter
+    @abstractmethod
+    def health(self, value: int) -> None:
         raise NotImplementedError
 
     @property
     @abstractmethod
     def energy(self) -> int:
+        raise NotImplementedError
+
+    @energy.setter
+    @abstractmethod
+    def energy(self, value: int) -> None:
         raise NotImplementedError
 
     @property
@@ -82,15 +102,16 @@ class LivingInterface(Entity):
 
     @tile.setter
     @abstractmethod
-    def tile(self, newtile: TileInterface | None) -> TileInterface | None:
+    def tile(self, newtile: TileInterface | None) -> None:
         raise NotImplementedError
 
     def get_properties(self) -> dict[str, Any]:
         propdict = super().get_properties()
         propdict.update({
             'tile': self.tile.identifier if self.tile is not None else None,
-            'energy': self.energy,
-            'health': self.health
+            'age': self.age,
+            'health': self.health,
+            'energy': self.energy
         })
         return propdict
 
@@ -109,6 +130,11 @@ class FieldInterface(Entity):
     @property
     @abstractmethod
     def tiles(self) -> tuple[TileInterface, ...]:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def tiles_dict(self) -> dict[tuple[int | float, ...], TileInterface]:
         raise NotImplementedError
 
     @abstractmethod

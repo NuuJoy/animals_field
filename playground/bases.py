@@ -49,7 +49,6 @@ class BaseTile(TileInterface):
     def remove_substances(self, living: LivingInterface):
         if living in self.substances:
             self.substances.remove(living)
-        living.tile = None
 
     def is_support(self, living: LivingInterface) -> bool:
         # not allow duplicate type within substance
@@ -68,8 +67,17 @@ class BaseLiving(LivingInterface):
         self._tile = tile
         if self.tile is not None:
             self.tile.add_substances(self)
+        self._age = 0
         self._health = 1
         self._energy = 0
+
+    @property
+    def age(self) -> int:
+        return self._age
+
+    @age.setter
+    def age(self, value: int):
+        self._age = value
 
     @property
     def health(self) -> int:
@@ -133,6 +141,10 @@ class Base2DSquareField(FieldInterface):
     @property
     def tiles(self):
         return tuple(val for val in self._tiles.values())
+
+    @property
+    def tiles_dict(self):
+        return self._tiles
 
     def add_tile(self,
                  tile: TileInterface,
