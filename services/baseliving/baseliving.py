@@ -17,9 +17,7 @@ if __name__ == '__main__':
         host='redis',
         port=6379,
         charset="utf-8",
-        decode_responses=True,
-        socket_connect_timeout=10,
-        socket_timeout=1
+        decode_responses=True
     )
 
     p = rds.pubsub()
