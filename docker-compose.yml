@@ -34,6 +34,7 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ${PWD}/services/player/player.py:/app/player.py
+      - ${PWD}/services/player/static:/app/static
       - ${PWD}/playground:/app/playground
     ports:
       - 8000:8000
