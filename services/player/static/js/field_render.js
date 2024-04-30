@@ -1,11 +1,28 @@
 'use strict'
 
-const playerImage = new Image()
-// playerImage.onload = setInterval(main, 1000)
-playerImage.src = 'image_tiles.gif'
+
+var images_toload = 2
+var loaded_images = 0
+
+const image_tiles = new Image()
+const image_baselives = new Image()
+
+image_tiles.onload = try_start_run
+image_baselives.onload = try_start_run
+
+image_tiles.src = 'static/img/image_tiles.gif'
+image_baselives.src = 'static/img/image_baselives.gif'
+
+function try_start_run() {
+    loaded_images += 1
+    if (loaded_images >= images_toload) {
+        // main()
+        setInterval(main, 500)
+    }
+}
 
 const fragpx = 8
-const zoomin = 1
+const zoomin = 2
 
 const field_slice = {
     '111': 1,
@@ -34,28 +51,28 @@ function get_fragment_cols(ul, u, ur, l, c, r, dl, d, dr) {
 function draw_tile(ctx, ulcol, urcol, drcol, dlcol, posx, posy) {
     let drawsize = zoomin * fragpx
     ctx.drawImage(
-        playerImage,
+        image_tiles,
         ulcol*fragpx, 0, fragpx, fragpx,
         zoomin*(posx*2*fragpx),
         zoomin*(posy*2*fragpx),
         drawsize, drawsize
     )
     ctx.drawImage(
-        playerImage,
+        image_tiles,
         urcol*fragpx, 1*fragpx, fragpx, fragpx,
         zoomin*(fragpx*(2*posx + 1)),
         zoomin*(fragpx*(2*posy)),
         drawsize, drawsize
     )
     ctx.drawImage(
-        playerImage,
+        image_tiles,
         drcol*fragpx, 2*fragpx, fragpx, fragpx,
         zoomin*(fragpx*(2*posx + 1)),
         zoomin*(fragpx*(2*posy + 1)),
         drawsize, drawsize
     )
     ctx.drawImage(
-        playerImage,
+        image_tiles,
         dlcol*fragpx, 3*fragpx, fragpx, fragpx,
         zoomin*(fragpx*(2*posx )),
         zoomin*(fragpx*(2*posy + 1)),
@@ -70,12 +87,26 @@ function draw_tile(ctx, ulcol, urcol, drcol, dlcol, posx, posy) {
     );
 }
 
+function draw_live(ctx, text, posx, posy) {
+    let keymap = {'v': 0, 'w': 16, 'V': 32, 'W': 48}
+    if (text in keymap) {
+        ctx.drawImage(
+            image_baselives,
+            keymap[text], 0, 2*fragpx, 2*fragpx,
+            zoomin*(posx*2*fragpx), zoomin*(posy*2*fragpx),
+            zoomin*2*fragpx, zoomin*2*fragpx
+        )
+    }
+}
+
 function get_tile(fieldmap, posx, posy) {
     let value
     try {
         value = fieldmap[posx][posy]
         if (value == undefined) {
             return 0
+        } else if (typeof value == 'string') {
+            return 1
         } else {
             return value
         }
@@ -84,25 +115,41 @@ function get_tile(fieldmap, posx, posy) {
     }
 }
 
-function generate_randomfield(sizex, sizey, thres) {
-    let fieldmap = []
-    for (let posx = 0; posx < sizex; posx++) {
-        let cols = []
-        for (let posy = 0; posy < sizey; posy++) {
-            if (Math.random() > thres) {
-                cols.push(1)
-            } else {
-                cols.push(0)
-            }
-        }
-        fieldmap.push(cols)
-    }
-    return fieldmap
+// function generate_randomfield(sizex, sizey) {
+//     let fieldmap = []
+//     for (let posx = 0; posx < sizex; posx++) {
+//         let cols = []
+//         for (let posy = 0; posy < sizey; posy++) {
+//             let randval = Math.random()
+//             if (randval < 0.25) {
+//                 cols.push(0)
+//             } else if (randval < 0.80){
+//                 cols.push(1)
+//             } else if (randval < 0.85){
+//                 cols.push('v')
+//             } else if (randval < 0.90){
+//                 cols.push('w')
+//             } else if (randval < 0.95){
+//                 cols.push('V')
+//             } else {
+//                 cols.push('W')
+//             }
+//         }
+//         fieldmap.push(cols)
+//     }
+//     return fieldmap
+// }
+
+function query_json(suburl) {
+    let xmlHttp = new XMLHttpRequest()
+    xmlHttp.open('GET', window.location.origin + suburl, false)
+    xmlHttp.send(null)
+    return JSON.parse(xmlHttp.response)
 }
 
 function main() {
-
-    let fieldmap = generate_randomfield(8, 8, 0.25)
+    // let fieldmap = generate_randomfield(8, 8)
+    let fieldmap = query_json('/jsonmap')['fieldmap']
 
     const canvas = document.getElementById('mapcanvas')
     canvas.width = zoomin * 2* fragpx * fieldmap.length
@@ -127,6 +174,7 @@ function main() {
 
             let [ulcol, urcol, drcol, dlcol] = get_fragment_cols(ul, u, ur, l, c, r, dl, d, dr)
             draw_tile(ctx, ulcol, urcol, drcol, dlcol, posx, posy)
+            draw_live(ctx, fieldmap[posx][posy], posx, posy)
         }
     }
 }
